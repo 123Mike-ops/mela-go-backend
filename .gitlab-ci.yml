@@ -7,12 +7,13 @@ test-ssh:
   before_script:
     - apk add --no-cache openssh
     - mkdir -p ~/.ssh
-    # Convert \n to actual newlines if the key is stored as a single line
     - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || (echo "Failed to scan EC2_HOST" && exit 1)
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
     - echo "EC2_HOST is: $EC2_HOST"
     - echo "EC2_USER is: $EC2_USER"
-    - ssh -v "$EC2_USER@$EC2_HOST" "echo ✅ SSH works"
+    - test -n "$EC2_HOST" || (echo "EC2_HOST is not set" && exit 1)
+    - test -n "$EC2_USER" || (echo "EC2_USER is not set" && exit 1)
+    - ssh -v "$EC2_USER@$EC2_HOST" "echo ✅ SSH works" || (echo "SSH connection failed" && exit 1)
