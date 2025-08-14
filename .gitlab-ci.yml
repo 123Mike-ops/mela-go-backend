@@ -15,4 +15,4 @@ test-ssh:
   script:
     - echo "EC2_HOST is: $EC2_HOST"
     - echo "EC2_USER is: $EC2_USER"
-    - ssh -v $EC2_USER@$EC2_HOST "echo ✅ SSH works"
+    - ssh -v "$EC2_USER@$EC2_HOST" "echo ✅ SSH works"
