@@ -12,8 +12,4 @@ test-ssh:
     - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || (echo "Failed to scan EC2_HOST" && exit 1)
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
-    - echo "EC2_HOST is: $EC2_HOST"
-    - echo "EC2_USER is: $EC2_USER"
-    - test -n "$EC2_HOST" || (echo "EC2_HOST is not set" && exit 1)
-    - test -n "$EC2_USER" || (echo "EC2_USER is not set" && exit 1)
     - ssh -v "$EC2_USER@$EC2_HOST" "echo ✅ SSH works" || (echo "SSH connection failed" && exit 1)
