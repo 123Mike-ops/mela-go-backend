@@ -1,7 +1,7 @@
 # Build stage
 FROM golang:1.25 AS builder
 
-WORKDIR /app/cmd
+WORKDIR /app
 
 # Copy go.mod and go.sum first for caching
 COPY go.mod go.sum ./
@@ -10,8 +10,8 @@ RUN go mod download
 # Copy the source code
 COPY . ./
 
-# Build the binary
-RUN go build -o auth-sso ./
+# Build the binary from the cmd directory
+RUN go build -o auth-sso ./cmd
 
 # Final stage
 FROM alpine:latest
