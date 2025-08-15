@@ -1,6 +1,20 @@
 stages:
+  - build
   - test
+  - deploy
 
+variables:
+  DOCKER_IMAGE: "auth-sso"
+  DOCKER_TAG: "latest"
+
+# Only run on main branch or manual trigger
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "web" # Manual trigger
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Your existing SSH test (unchanged)
 test-ssh:
   stage: test
   image: alpine:latest
@@ -15,3 +29,46 @@ test-ssh:
     - test -n "$EC2_HOST" || (echo "EC2_HOST is not set" && exit 1)
     - test -n "$EC2_USER" || (echo "EC2_USER is not set" && exit 1)
     - ssh -v "$EC2_USER@$EC2_HOST" "echo ✅ SSH works" || (echo "SSH connection failed" && exit 1)
+
+# Build stage now explicitly clones the repo
+build-app:
+  stage: build
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  before_script:
+    - apk add --no-cache git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git .
+    - git checkout main
+  script:
+    - docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+    - docker save $DOCKER_IMAGE:$DOCKER_TAG > auth-sso.tar
+  artifacts:
+    paths:
+      - auth-sso.tar
+    expire_in: 1 hour
+
+# Deploy stage (unchanged)
+deploy-app:
+  stage: deploy
+  image: alpine:latest
+  needs: [build-app, test-ssh]
+  before_script:
+    - apk add --no-cache openssh docker-cli
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+  script:
+    - scp auth-sso.tar $EC2_USER@$EC2_HOST:~/auth-sso/
+    - ssh $EC2_USER@$EC2_HOST "
+      docker load -i ~/auth-sso/auth-sso.tar &&
+      docker stop auth-sso || true &&
+      docker rm auth-sso || true &&
+      docker run -d \
+      --name auth-sso \
+      --restart always \
+      -p 8080:8080 \
+      -e DATABASE_URL=postgres://postgres:postgres@db:5432/auth-sso?sslmode=disable \
+      $DOCKER_IMAGE:$DOCKER_TAG
+      "
