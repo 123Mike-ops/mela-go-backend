@@ -1,0 +1,16 @@
+basePath: /api
+host: localhost:8080
+info:
+  contact:
+    email: mikiyas@example.com
+    name: Mikiyas Daniel
+    url: http://github.com/yourusername
+  description: This is the Swapper system backend API built with Go and Gin.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Mela API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

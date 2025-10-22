@@ -1,0 +1,21 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the Swapper system backend API built with Go and Gin.",
+        "title": "Mela API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Mikiyas Daniel",
+            "url": "http://github.com/yourusername",
+            "email": "mikiyas@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {}
+}

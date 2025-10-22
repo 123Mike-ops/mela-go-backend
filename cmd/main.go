@@ -1,3 +1,17 @@
+// @title Mela API
+// @version 1.0
+// @description This is the Swapper system backend API built with Go and Gin.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Mikiyas Daniel
+// @contact.url http://github.com/yourusername
+// @contact.email mikiyas@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
 package main
 
 import (
@@ -9,9 +23,15 @@ import (
 	"auth-sso/internals/infrastructure/config"
 	userRouteHandler "auth-sso/internals/infrastructure/handler/user"
 
+	_ "auth-sso/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+
 
 func main() {
     // Load config
@@ -44,9 +64,12 @@ func main() {
 
     // Set up Gin router
     r := gin.Default()
+    r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
     // Group all API under /api
     api := r.Group("/api")
+    
+
 
     // Register domain-specific routes
     userRouteHandler.RegisterRoutes(api, userHandler)
