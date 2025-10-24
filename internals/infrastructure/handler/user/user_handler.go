@@ -2,9 +2,12 @@ package user
 
 import (
 	"auth-sso/internals/application/user"
+	"auth-sso/utils/model"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	response "auth-sso/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,9 +31,26 @@ func (h *Handler) GetUserByID(c *gin.Context) {
     user, err := h.Service.GetUser(c.Request.Context(), id)
     if err != nil {
         fmt.Print("error",err)
-        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        err:=&model.ErrorResponse{
+            Code:        http.StatusInternalServerError,
+            Message:     "Failed to retrieve user",
+            Description: err.Error(),
+        }
+        response.ErrorResponse(c,err )
         return
     }
 
-    c.JSON(http.StatusOK, user)
+    if user == nil {
+        err:=&model.ErrorResponse{
+            Code:        http.StatusNotFound,
+            Message:     "User not found",
+            Description: "No user exists with the given ID",
+        }
+        response.ErrorResponse(c,err )
+        return
+    }
+
+    response.SuccessResponse(c, http.StatusOK, user, nil)
+
+  
 }
