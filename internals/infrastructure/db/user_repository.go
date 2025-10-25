@@ -33,15 +33,26 @@ func (r *UserRepository) GetByID(id int) (*user.User, error) {
     return &u, nil
 }
 
-func (r *UserRepository) Create(u *user.User) error {
-    ctx := context.Background()
+func (r *UserRepository) Create(ctx context.Context, u *user.User) (*user.User, error) {
+    var createdUser user.User
 
-    _, err := r.DB.Exec(
+    query := `
+        INSERT INTO users (name, email)
+        VALUES ($1, $2)
+        RETURNING id, name, email
+    `
+
+    err := r.DB.QueryRow(
         ctx,
-        "INSERT INTO users (name, email) VALUES ($1, $2)",
+        query,
         u.Name,
         u.Email,
-    )
+    ).Scan(&createdUser.ID, &createdUser.Name, &createdUser.Email)
 
-    return err
+    if err != nil {
+        return nil, err
+    }
+
+    return &createdUser, nil
 }
+
