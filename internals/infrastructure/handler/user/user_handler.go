@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	RegisterUser "auth-sso/internals/infrastructure/handler"
 	response "auth-sso/utils"
 
 	"github.com/gin-gonic/gin"
@@ -54,3 +55,33 @@ func (h *Handler) GetUserByID(c *gin.Context) {
 
   
 }
+func (h *Handler) CreateUser(c *gin.Context) {
+    var user RegisterUser.RegisterUser
+
+    // Parse JSON body
+    if err := c.ShouldBindJSON(&user); err != nil {
+        errResp := &model.ErrorResponse{
+            Code:        http.StatusBadRequest,
+            Message:     "Invalid request body",
+            Description: err.Error(),
+        }
+        response.ErrorResponse(c, errResp)
+        return
+    }
+
+    // Call service layer to create the user
+    createdUser, err := h.Service.CreateUser(c.Request.Context(), &user)
+    if err != nil {
+        errResp := &model.ErrorResponse{
+            Code:        http.StatusInternalServerError,
+            Message:     "Failed to create user",
+            Description: err.Error(),
+        }
+        response.ErrorResponse(c, errResp)
+        return
+    }
+
+    // Return success response
+    response.SuccessResponse(c, http.StatusCreated, createdUser, nil)
+}
+                                                                    
