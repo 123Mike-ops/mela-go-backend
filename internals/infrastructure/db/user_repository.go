@@ -4,6 +4,7 @@ import (
 	"auth-sso/internals/domain/user"
 	userport "auth-sso/internals/ports/user"
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -56,3 +57,12 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) (*user.User, 
     return &createdUser, nil
 }
 
+func (r *UserRepository) ExistsByEmailOrPhone(ctx context.Context, email, phoneNumber string) (bool, error) {
+	var count int64
+	query := "SELECT COUNT(*) FROM users WHERE email = $1 OR phone_number = $2"
+	err := r.DB.QueryRow(ctx, query, email, phoneNumber).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check existence: %w", err)
+	}
+	return count > 0, nil
+}

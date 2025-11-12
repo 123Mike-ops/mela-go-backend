@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	RegisterUser "auth-sso/internals/infrastructure/handler"
 	response "auth-sso/utils"
@@ -59,16 +60,41 @@ func (h *Handler) CreateUser(c *gin.Context) {
     var user RegisterUser.RegisterUser
 
     // Parse JSON body
-    if err := c.ShouldBindJSON(&user); err != nil {
-        errResp := &model.ErrorResponse{
-            Code:        http.StatusBadRequest,
-            Message:     "Invalid request body",
-            Description: err.Error(),
-        }
-        response.ErrorResponse(c, errResp)
-        return
-    }
+  if err := c.ShouldBindJSON(&user); err != nil {
+	errResp := &model.ErrorResponse{
+		Code:        http.StatusBadRequest,
+		Message:     "Invalid request body",
+		Description: err.Error(),
+	}
+	response.ErrorResponse(c, errResp)
+	return
+}
 
+
+if err := user.Validate(); err != nil {
+	
+	var fieldErrors []string
+	for _, e := range err.(validation.Errors) {
+		fieldErrors = append(fieldErrors, e.Error())
+	}
+	errResp := &model.ErrorResponse{
+		Code:        http.StatusBadRequest,
+		Message:     "Validation failed",
+		Description: strings.Join(fieldErrors, "; "),
+	}
+	response.ErrorResponse(c, errResp)
+	return
+}
+        
+if err := s.ValidateUserUniqueness(ctx, user.Email, user.PhoneNumber); err != nil {
+    errResp := &model.ErrorResponse{
+        Code:        http.StatusConflict,
+        Message:     "User already exists",
+        Description: err.Error(),
+    }
+    response.ErrorResponse(c, errResp)
+    return
+}
     // Call service layer to create the user
     createdUser, err := h.Service.CreateUser(c.Request.Context(), &user)
     if err != nil {
@@ -85,3 +111,4 @@ func (h *Handler) CreateUser(c *gin.Context) {
     response.SuccessResponse(c, http.StatusCreated, createdUser, nil)
 }
                                                                     
+
